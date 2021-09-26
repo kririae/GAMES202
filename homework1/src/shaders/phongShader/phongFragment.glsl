@@ -15,7 +15,7 @@ varying highp vec3 vFragPos;
 varying highp vec3 vNormal;
 
 // Shadow map related variables
-#define NUM_SAMPLES 20
+#define NUM_SAMPLES 100
 #define BLOCKER_SEARCH_NUM_SAMPLES NUM_SAMPLES
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
@@ -28,87 +28,93 @@ uniform sampler2D uShadowMap;
 
 varying vec4 vPositionFromLight;
 
-highp float rand_1to1(highp float x ) { 
+highp float rand_1to1(highp float x) {
   // -1 -1
-  return fract(sin(x)*10000.0);
+  return fract(sin(x) * 10000.0);
 }
 
-highp float rand_2to1(vec2 uv ) { 
+highp float rand_2to1(vec2 uv) {
   // 0 - 1
-	const highp float a = 12.9898, b = 78.233, c = 43758.5453;
-	highp float dt = dot( uv.xy, vec2( a,b ) ), sn = mod( dt, PI );
-	return fract(sin(sn) * c);
+  const highp float a = 12.9898, b = 78.233, c = 43758.5453;
+  highp float dt = dot(uv.xy, vec2(a, b)), sn = mod(dt, PI);
+  return fract(sin(sn) * c);
 }
 
 float unpack(vec4 rgbaDepth) {
-    const vec4 bitShift = vec4(1.0, 1.0/256.0, 1.0/(256.0*256.0), 1.0/(256.0*256.0*256.0));
-    return dot(rgbaDepth, bitShift);
+  const vec4 bitShift = vec4(1.0, 1.0 / 256.0, 1.0 / (256.0 * 256.0),
+                             1.0 / (256.0 * 256.0 * 256.0));
+  return dot(rgbaDepth, bitShift);
 }
 
 vec2 poissonDisk[NUM_SAMPLES];
 
-void poissonDiskSamples( const in vec2 randomSeed ) {
+void poissonDiskSamples(const in vec2 randomSeed) {
+  float ANGLE_STEP = PI2 * float(NUM_RINGS) / float(NUM_SAMPLES);
+  float INV_NUM_SAMPLES = 1.0 / float(NUM_SAMPLES);
 
-  float ANGLE_STEP = PI2 * float( NUM_RINGS ) / float( NUM_SAMPLES );
-  float INV_NUM_SAMPLES = 1.0 / float( NUM_SAMPLES );
-
-  float angle = rand_2to1( randomSeed ) * PI2;
+  float angle = rand_2to1(randomSeed) * PI2;
   float radius = INV_NUM_SAMPLES;
   float radiusStep = radius;
 
-  for( int i = 0; i < NUM_SAMPLES; i ++ ) {
-    poissonDisk[i] = vec2( cos( angle ), sin( angle ) ) * pow( radius, 0.75 );
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    poissonDisk[i] = vec2(cos(angle), sin(angle)) * pow(radius, 0.75);
     radius += radiusStep;
     angle += ANGLE_STEP;
   }
 }
 
-void uniformDiskSamples( const in vec2 randomSeed ) {
-
+void uniformDiskSamples(const in vec2 randomSeed) {
   float randNum = rand_2to1(randomSeed);
-  float sampleX = rand_1to1( randNum ) ;
-  float sampleY = rand_1to1( sampleX ) ;
+  float sampleX = rand_1to1(randNum);
+  float sampleY = rand_1to1(sampleX);
 
   float angle = sampleX * PI2;
   float radius = sqrt(sampleY);
 
-  for( int i = 0; i < NUM_SAMPLES; i ++ ) {
-    poissonDisk[i] = vec2( radius * cos(angle) , radius * sin(angle)  );
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    poissonDisk[i] = vec2(radius * cos(angle), radius * sin(angle));
 
-    sampleX = rand_1to1( sampleY ) ;
-    sampleY = rand_1to1( sampleX ) ;
+    sampleX = rand_1to1(sampleY);
+    sampleY = rand_1to1(sampleX);
 
     angle = sampleX * PI2;
     radius = sqrt(sampleY);
   }
 }
 
-float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
-	return 1.0;
-}
-
-float PCF(sampler2D shadowMap, vec4 coords) {
-  return 1.0;
-}
-
-float PCSS(sampler2D shadowMap, vec4 coords){
-  // STEP 1: avgblocker depth
-
-  // STEP 2: penumbra size
-
-  // STEP 3: filtering
-  
-  return 1.0;
-
-}
-
+float findBlocker(sampler2D shadowMap, vec2 uv, float zReceiver) { return 1.0; }
 
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord) {
   float cloestDepth = unpack(texture2D(shadowMap, shadowCoord.xy).rgba);
   float currentDepth = shadowCoord.z;
 
   float bias = 0.005;
-  return cloestDepth < currentDepth - bias ? 0.5 : 1.0;
+  return cloestDepth < currentDepth - bias ? 0.0 : 1.0;
+}
+
+float PCF(sampler2D shadowMap, vec4 coords) {
+  poissonDiskSamples(coords.xy);
+
+  highp float result = 0.0;
+  // Approx the size [0, 1] -> [2048 * 2048]
+  highp float filterSize = 1.0 / 2048.0 * 20.0;
+  for (int i = 0; i < NUM_SAMPLES; ++i) {
+    vec4 sampleCoords = coords;
+    sampleCoords.xy += poissonDisk[i] * filterSize;
+    result += useShadowMap(shadowMap, sampleCoords);
+  }
+
+  return result / float(NUM_SAMPLES);
+}
+
+float PCSS(sampler2D shadowMap, vec4 coords) {
+  // STEP 1: avgblocker depth
+
+  // STEP 2: penumbra size
+
+  // STEP 3: filtering
+
+  return 1.0;
 }
 
 vec3 blinnPhong() {
@@ -137,12 +143,11 @@ vec3 blinnPhong() {
 void main(void) {
   float visibility;
 
-  vec4 shadowCoord = vPositionFromLight;
-  shadowCoord.xyz /= shadowCoord.w; // homogenious
+  vec3 shadowCoord = vPositionFromLight.xyz / vPositionFromLight.w;
   shadowCoord = (shadowCoord * 0.5) + 0.5;
 
-  visibility = useShadowMap(uShadowMap, shadowCoord);
-  // visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
+  visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
   // visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
 
   vec3 phongColor = blinnPhong();
