@@ -56,7 +56,6 @@ float unpack(vec4 rgbaDepth) {
 vec2 poissonDisk[NUM_SAMPLES];
 
 void poissonDiskSamples(const in vec2 randomSeed) {
-
   float ANGLE_STEP = PI2 * float(NUM_RINGS) / float(NUM_SAMPLES);
   float INV_NUM_SAMPLES = 1.0 / float(NUM_SAMPLES);
 
@@ -72,7 +71,6 @@ void poissonDiskSamples(const in vec2 randomSeed) {
 }
 
 void uniformDiskSamples(const in vec2 randomSeed) {
-
   float randNum = rand_2to1(randomSeed);
   float sampleX = rand_1to1(randNum);
   float sampleY = rand_1to1(sampleX);
@@ -107,8 +105,7 @@ float findBlocker(sampler2D shadowMap, vec2 uv, float zReceiver) {
     }
   }
 
-  if (numBlockers == 0)
-    return -1.0;
+  if (numBlockers == 0) return -1.0;
 
   return blockerDepthSum / float(numBlockers);
 }
@@ -120,15 +117,13 @@ float PCF_Filter(sampler2D shadowMap, vec2 uv, float zReceiver,
   for (int i = 0; i < PCF_NUM_SAMPLES; i++) {
     float depth =
         unpack(texture2D(shadowMap, uv + poissonDisk[i] * filterRadius));
-    if (zReceiver <= depth)
-      sum += 1.0;
+    if (zReceiver <= depth) sum += 1.0;
   }
 
   for (int i = 0; i < PCF_NUM_SAMPLES; i++) {
     float depth =
         unpack(texture2D(shadowMap, uv + -poissonDisk[i].yx * filterRadius));
-    if (zReceiver <= depth)
-      sum += 1.0;
+    if (zReceiver <= depth) sum += 1.0;
   }
 
   return sum / (2.0 * float(PCF_NUM_SAMPLES));
@@ -136,27 +131,26 @@ float PCF_Filter(sampler2D shadowMap, vec2 uv, float zReceiver,
 
 float PCF(sampler2D shadowMap, vec4 coords) {
   vec2 uv = coords.xy;
-  float zReceiver = coords.z; // Assumed to be eye-space z in this code
+  float zReceiver = coords.z;  // Assumed to be eye-space z in this code
 
   poissonDiskSamples(uv);
   return PCF_Filter(shadowMap, uv, zReceiver, 0.002);
 }
 
 float penumbraSize(float zReceiver,
-                   float zBlocker) { // Parallel plane estimation
+                   float zBlocker) {  // Parallel plane estimation
   return (zReceiver - zBlocker) / zBlocker;
 }
 
 float PCSS(sampler2D shadowMap, vec4 coords) {
   vec2 uv = coords.xy;
-  float zReceiver = coords.z; // Assumed to be eye-space z in this code
+  float zReceiver = coords.z;  // Assumed to be eye-space z in this code
   // STEP 1: blocker search
   poissonDiskSamples(uv);
   float avgBlockerDepth = findBlocker(shadowMap, uv, zReceiver);
 
   // There are no occluders so early out (this saves filtering)
-  if (avgBlockerDepth == -1.0)
-    return 1.0;
+  if (avgBlockerDepth == -1.0) return 1.0;
 
   // STEP 2: penumbra size
   float penumbraRatio = penumbraSize(zReceiver, avgBlockerDepth);
@@ -195,14 +189,13 @@ vec3 blinnPhong() {
 }
 
 void main(void) {
-
   vec3 shadowCoord =
       (vPositionFromLight.xyz / vPositionFromLight.w) / 2.0 + 0.5;
 
   float visibility;
   visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
 
   vec3 phongColor = blinnPhong();
 

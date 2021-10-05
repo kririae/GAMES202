@@ -11,7 +11,6 @@ varying highp vec3 vNormal;
 varying highp vec2 vTextureCoord;
 
 void main(void) {
-
   vNormal = aNormalPosition;
   vTextureCoord = aTextureCoord;
 

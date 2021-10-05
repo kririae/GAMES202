@@ -1,22 +1,21 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <style>
-        html,
-        body {
-            margin: 0;
-            background-color: black;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }
+      html,
+      body {
+        margin: 0;
+        background-color: black;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
 
-        #glcanvas {
-            top: 0;
-            width: 100%;
-            height: 100%;
-        }
+      #glcanvas {
+        top: 0;
+        width: 100%;
+        height: 100%;
+      }
     </style>
     <script src="lib/sh.js" defer></script>
     <script src="lib/three.js" defer></script>
@@ -38,6 +37,7 @@
     <script src="src/materials/ShadowMaterial.js" defer></script>
     <script src="src/materials/PhongMaterial.js" defer></script>
     <script src="src/materials/SkyBoxMaterial.js" defer></script>
+    <script src="src/materials/PRTMaterial.js" defer></script>
 
     <script src="src/textures/Texture.js" defer></script>
     <script src="src/textures/FBO.js" defer></script>
@@ -55,12 +55,9 @@
     <script src="src/renderers/MeshRender.js" defer></script>
 
     <script src="src/engine.js" defer></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <canvas id="glcanvas"></canvas>
-
-
-</body>
-
+  </body>
 </html>
