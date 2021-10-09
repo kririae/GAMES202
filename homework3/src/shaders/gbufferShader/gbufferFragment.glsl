@@ -1,5 +1,5 @@
 #ifdef GL_ES
-#extension GL_EXT_draw_buffers: enable
+#extension GL_EXT_draw_buffers : enable
 precision highp float;
 #endif
 
@@ -13,7 +13,7 @@ varying highp vec4 vPosWorld;
 varying highp vec3 vNormalWorld;
 varying highp float vDepth;
 
-float SimpleShadowMap(vec3 posWorld,float bias){
+float SimpleShadowMap(vec3 posWorld, float bias) {
   vec4 posLight = vWorldToLight * vec4(posWorld, 1.0);
   vec2 shadowCoord = clamp(posLight.xy * 0.5 + 0.5, vec2(0.0), vec2(1.0));
   float depthSM = texture2D(uShadowMap, shadowCoord).x;

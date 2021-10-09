@@ -26,12 +26,10 @@ float Rand1(inout float p) {
   return fract(p);
 }
 
-vec2 Rand2(inout float p) {
-  return vec2(Rand1(p), Rand1(p));
-}
+vec2 Rand2(inout float p) { return vec2(Rand1(p), Rand1(p)); }
 
 float InitRand(vec2 uv) {
-	vec3 p3  = fract(vec3(uv.xyx) * .1031);
+  vec3 p3 = fract(vec3(uv.xyx) * .1031);
   p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
 }
@@ -40,7 +38,7 @@ vec3 SampleHemisphereUniform(inout float s, out float pdf) {
   vec2 uv = Rand2(s);
   float z = uv.x;
   float phi = uv.y * TWO_PI;
-  float sinTheta = sqrt(1.0 - z*z);
+  float sinTheta = sqrt(1.0 - z * z);
   vec3 dir = vec3(sinTheta * cos(phi), sinTheta * sin(phi), z);
   pdf = INV_TWO_PI;
   return dir;
@@ -67,9 +65,7 @@ void LocalBasis(vec3 n, out vec3 b1, out vec3 b2) {
   b2 = vec3(b, sign_ + n.y * n.y * a, -n.y);
 }
 
-vec4 Project(vec4 a) {
-  return a / a.w;
-}
+vec4 Project(vec4 a) { return a / a.w; }
 
 float GetDepth(vec3 posWorld) {
   float depth = (vWorldToScreen * vec4(posWorld, 1.0)).w;
@@ -141,7 +137,7 @@ vec3 EvalDirectionalLight(vec2 uv) {
 }
 
 bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
-  float marchStep = 1.0 / 200.0;
+  float marchStep = 1.0 / 5.0;
   const int marchNum = 50;
 
   dir = normalize(dir);
@@ -149,8 +145,8 @@ bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
     vec3 pos = ori + float(i) * marchStep * dir;
     float posDepth = GetDepth(pos);
     float bufferDepth = GetGBufferDepth(GetScreenCoordinate(pos));
-    
-    if (posDepth > bufferDepth + 1e-6) {
+
+    if (posDepth > bufferDepth + 3e-6) {
       // TODO: optimize hitPos for acc
       hitPos = pos;
       return true;
@@ -160,7 +156,7 @@ bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
   return false;
 }
 
-#define SAMPLE_NUM 2
+#define SAMPLE_NUM 5
 
 void main() {
   float s = InitRand(vPosWorld.xy);
@@ -171,15 +167,17 @@ void main() {
   vec3 wi = normalize(uLightDir);
   vec3 wo = normalize(uCameraPos - vPosWorld.xyz);
   vec3 N = normalize(GetGBufferNormalWorld(uv));
-  vec3 L_dir = EvalDiffuse(wi, wo, uv);
+  vec3 L_dir = EvalDiffuse(wi, wo, uv) * EvalDirectionalLight(uv);
 
   // Indirect Light
   vec3 L_ind = vec3(0.0);
-  float pdf;
   for (int i = 0; i < SAMPLE_NUM; ++i) {
     // Local coord
+    float pdf;
     vec3 b1, b2;
-    LocalBasis(b1, b2, N);
+    LocalBasis(N, b1, b2);
+
+    Rand1(s);
     vec3 dir = SampleHemisphereUniform(s, pdf);
     dir = normalize(mat3(b1, b2, N) * dir);
 
@@ -189,13 +187,14 @@ void main() {
       vec3 l_wi = wi;
       vec3 l_wo = dir;
       vec2 l_uv = GetScreenCoordinate(hitPos);
-      L_ind += EvalDiffuse(l_wo, wo, uv) / pdf * EvalDiffuse(l_wi, -l_wo, l_uv) * EvalDirectionalLight(l_uv);
+      L_ind += EvalDiffuse(l_wo, wo, uv) / pdf * EvalDiffuse(l_wi, l_wo, l_uv) *
+               EvalDirectionalLight(l_uv);
     }
   }
 
-  L_ind /= float(SAMPLE_NUM);
-  L = L_ind;
-  // L = L_dir + L_ind;
+  L_ind = L_ind / float(SAMPLE_NUM) * 5.0;
+  L = L_dir + L_ind;
+
   vec3 color = pow(clamp(L, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
   gl_FragColor = vec4(vec3(color.rgb), 1.0);
 }

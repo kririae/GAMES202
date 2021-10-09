@@ -10,7 +10,6 @@ varying highp vec3 vNormal;
 varying highp vec2 vTextureCoord;
 
 void main(void) {
-
   vNormal = (uModelMatrix * vec4(aNormalPosition, 0.0)).xyz;
 
   gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix *

@@ -55,14 +55,13 @@ vec3 blinnPhong() {
 }
 
 void main(void) {
-
   vec3 shadowCoord =
       (vPositionFromLight.xyz / vPositionFromLight.w) / 2.0 + 0.5;
 
   float visibility = 1.0;
   // visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   // visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
 
   vec3 phongColor = blinnPhong();
 

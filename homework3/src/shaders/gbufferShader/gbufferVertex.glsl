@@ -22,6 +22,7 @@ void main(void) {
   vTextureCoord = aTextureCoord;
   vWorldToLight = uLightVP;
 
-  gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * vec4(aVertexPosition, 1.0);
+  gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix *
+                vec4(aVertexPosition, 1.0);
   vDepth = gl_Position.w;
 }
