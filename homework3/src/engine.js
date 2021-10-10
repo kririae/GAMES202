@@ -69,17 +69,17 @@ function GAMES202Main() {
 
   // Add light
   let lightPos, lightDir, lightRadiance;
-  /*
-	// Cave
-	lightRadiance = [20, 20, 20];
-	lightPos = [-0.45, 5.40507, 0.637043];
-	lightDir = {
-		'x': 0.39048811,
-		'y': -0.89896828,
-		'z': 0.19843153,
-	};
-	*/
   // /*
+  // Cave
+  lightRadiance = [20, 20, 20];
+  lightPos = [-0.45, 5.40507, 0.637043];
+  lightDir = {
+    x: 0.39048811,
+    y: -0.89896828,
+    z: 0.19843153,
+  };
+  // */
+  /*
   // Cube
   lightRadiance = [1, 1, 1];
   lightPos = [-2, 4, 1];
@@ -88,7 +88,7 @@ function GAMES202Main() {
     y: -0.9,
     z: -0.2,
   };
-  // */
+  */
   let lightUp = [1, 0, 0];
   const directionLight = new DirectionalLight(
     lightRadiance,

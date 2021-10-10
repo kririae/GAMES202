@@ -138,7 +138,7 @@ vec3 EvalDirectionalLight(vec2 uv) {
 
 bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
   float marchStep = 1.0 / 5.0;
-  const int marchNum = 50;
+  const int marchNum = 20;
 
   dir = normalize(dir);
   for (int i = 0; i < marchNum; ++i) {
@@ -146,7 +146,7 @@ bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
     float posDepth = GetDepth(pos);
     float bufferDepth = GetGBufferDepth(GetScreenCoordinate(pos));
 
-    if (posDepth > bufferDepth + 3e-6) {
+    if (posDepth > bufferDepth + 1e-6) {
       // TODO: optimize hitPos for acc
       hitPos = pos;
       return true;
@@ -156,7 +156,7 @@ bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
   return false;
 }
 
-#define SAMPLE_NUM 5
+#define SAMPLE_NUM 2
 
 void main() {
   float s = InitRand(vPosWorld.xy);
@@ -192,7 +192,7 @@ void main() {
     }
   }
 
-  L_ind = L_ind / float(SAMPLE_NUM) * 5.0;
+  L_ind = L_ind / float(SAMPLE_NUM);
   L = L_dir + L_ind;
 
   vec3 color = pow(clamp(L, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
