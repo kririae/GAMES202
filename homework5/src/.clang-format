@@ -1,8 +1,8 @@
-BasedOnStyle: LLVM
+BasedOnStyle: Google
 AccessModifierOffset: -2
 IndentCaseLabels: false
 PointerBindsToType: false
-IndentWidth: 4
+IndentWidth: 2
 AlwaysBreakTemplateDeclarations: true
 ColumnLimit: 90
 
